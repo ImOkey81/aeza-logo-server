@@ -1,6 +1,10 @@
 package org.aeza.aezaserver.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.aeza.aezaserver.dto.dashboard.DashboardSummaryDto;
 import org.aeza.aezaserver.dto.dashboard.DashboardTimeseriesDto;
@@ -44,6 +48,31 @@ public class DashboardController {
 
     @GetMapping("/top-hosts")
     @Operation(summary = "Get top hosts", description = "Returns hosts sorted by log count.")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Top hosts response",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                              "items": [
+                                                {
+                                                  "host": "srv-1",
+                                                  "count": 53
+                                                },
+                                                {
+                                                  "host": "srv-2",
+                                                  "count": 17
+                                                }
+                                              ]
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
     public DashboardTopHostsDto topHosts(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
@@ -54,6 +83,31 @@ public class DashboardController {
 
     @GetMapping("/top-services")
     @Operation(summary = "Get top services", description = "Returns services sorted by log count.")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Top services response",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                              "items": [
+                                                {
+                                                  "service": "backend",
+                                                  "count": 53
+                                                },
+                                                {
+                                                  "service": "postgres",
+                                                  "count": 11
+                                                }
+                                              ]
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
     public DashboardTopServicesDto topServices(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,

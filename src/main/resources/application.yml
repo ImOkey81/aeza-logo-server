@@ -30,3 +30,9 @@ integration:
     chat-id: -1003869066185
   webhook:
     url: ""
+
+springdoc:
+  swagger-ui:
+    path: /docs
+  api-docs:
+    path: /docs/openapi
