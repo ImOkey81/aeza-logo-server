@@ -2,9 +2,9 @@ spring:
   application:
     name: aeza-server
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/logovizor}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    url: jdbc:postgresql://localhost:5432/logovizor
+    username: postgres
+    password: postgres
   jpa:
     hibernate:
       ddl-auto: update
@@ -13,26 +13,20 @@ spring:
 server:
   port: 8087
 
-security:
-  admin:
-    username: ${ADMIN_USERNAME:admin}
-    password: ${ADMIN_PASSWORD:admin123}
-
-auth:
-  token:
-    secret: ${JWT_SECRET:dev-secret}
-    ttl-seconds: 86400
-
-agent:
-  shared-token: ${AGENT_SHARED_TOKEN:agent-secret}
+opensearch:
+  enabled: true
+  url: http://localhost:9200
+  username: ""
+  password: ""
+  index-prefix: log-events
 
 alert:
   scheduler:
-    interval-ms: ${ALERT_SCHEDULER_INTERVAL_MS:30000}
+    interval-ms: 30000
 
 integration:
   telegram:
-    bot-token: ${TELEGRAM_BOT_TOKEN:}
-    chat-id: ${TELEGRAM_CHAT_ID:}
+    bot-token: 8746703923:AAGGwrf0o3Mn8XOzf3thQqfd8U4cqwkPwr0
+    chat-id: -1003869066185
   webhook:
-    url: ${ALERT_WEBHOOK_URL:}
+    url: ""
