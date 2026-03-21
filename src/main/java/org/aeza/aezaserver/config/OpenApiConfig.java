@@ -23,7 +23,7 @@ public class OpenApiConfig {
                                 .name("Aeza Server")
                                 .url("https://github.com/")))
                 .servers(List.of(
-                        new Server().url("http://194.113.106.38:8087").description("Production server"),
+                        new Server().url("/").description("Current server"),
                         new Server().url("http://localhost:8087").description("Local server")
                 ));
     }

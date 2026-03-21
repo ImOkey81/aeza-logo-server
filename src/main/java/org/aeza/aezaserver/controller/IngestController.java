@@ -42,12 +42,97 @@ public class IngestController {
 
     @PostMapping("/ingest/batch")
     @Operation(summary = "Ingest batch of logs", description = "Accepts one agent id and a batch of log events.")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            description = "Batch of logs from agent",
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                            value = """
+                                    {
+                                      "agentId": "agent-1",
+                                      "events": [
+                                        {
+                                          "timestamp": "2026-03-21T11:40:00Z",
+                                          "level": "ERROR",
+                                          "message": "database timeout",
+                                          "host": "srv-1",
+                                          "service": "backend",
+                                          "sourceType": "file",
+                                          "sourcePath": "/var/log/app.log",
+                                          "tags": ["prod", "db"],
+                                          "metadata": {
+                                            "env": "prod",
+                                            "component": "jdbc"
+                                          }
+                                        }
+                                      ]
+                                    }
+                                    """
+                    )
+            )
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Ingest accepted",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                              "status": "ok",
+                                              "accepted": 1,
+                                              "requestId": "27aa717b-688f-458c-954f-f8fa8d8cbd01"
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
     public IngestAckResponse ingestBatch(@Valid @RequestBody IngestBatchRequest request) {
         return ingestService.ingest(request);
     }
 
     @PostMapping("/agents/heartbeat")
     @Operation(summary = "Update agent heartbeat", description = "Creates or updates agent status and last seen timestamp.")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            description = "Agent heartbeat payload",
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                            value = """
+                                    {
+                                      "agentId": "agent-1",
+                                      "host": "srv-1",
+                                      "status": "ONLINE",
+                                      "bufferedCount": 0
+                                    }
+                                    """
+                    )
+            )
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Agent status updated",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                              "agentId": "agent-1",
+                                              "host": "srv-1",
+                                              "status": "ONLINE",
+                                              "lastSeen": "2026-03-21T11:24:32.636001841Z",
+                                              "bufferedCount": 0
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
     public AgentStatusDto heartbeat(@Valid @RequestBody HeartbeatRequest request) {
         return agentService.updateHeartbeat(request);
     }

@@ -1,6 +1,10 @@
 package org.aeza.aezaserver.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.aeza.aezaserver.dto.alerts.AlertHistoryItemDto;
@@ -31,12 +35,63 @@ public class AlertsController {
 
     @GetMapping("/rules")
     @Operation(summary = "List alert rules")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Alert rules",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            [
+                                              {
+                                                "id": 1,
+                                                "name": "DB errors to Telegram",
+                                                "enabled": true,
+                                                "conditionType": "count_gt",
+                                                "query": "database",
+                                                "threshold": 1,
+                                                "windowSeconds": 300,
+                                                "cooldownSeconds": 300,
+                                                "channel": "telegram",
+                                                "level": "ERROR",
+                                                "createdAt": "2026-03-21T11:27:14.296289Z",
+                                                "updatedAt": "2026-03-21T11:27:14.296289Z",
+                                                "lastTriggeredAt": null
+                                              }
+                                            ]
+                                            """
+                            )
+                    )
+            )
+    })
     public List<AlertRuleResponseDto> rules() {
         return alertRuleService.findAll();
     }
 
     @PostMapping("/rules")
     @Operation(summary = "Create alert rule")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                            value = """
+                                    {
+                                      "name": "DB errors to Telegram",
+                                      "enabled": true,
+                                      "conditionType": "count_gt",
+                                      "query": "database",
+                                      "threshold": 1,
+                                      "windowSeconds": 300,
+                                      "cooldownSeconds": 300,
+                                      "channel": "telegram",
+                                      "level": "ERROR"
+                                    }
+                                    """
+                    )
+            )
+    )
     public AlertRuleResponseDto create(@Valid @RequestBody AlertRuleCreateRequest request) {
         return alertRuleService.create(request);
     }
@@ -59,6 +114,31 @@ public class AlertsController {
 
     @GetMapping("/history")
     @Operation(summary = "List alert history")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Alert history",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            [
+                                              {
+                                                "id": 1,
+                                                "ruleId": 1,
+                                                "ruleName": "DB errors to Telegram",
+                                                "triggeredAt": "2026-03-21T11:36:55.691Z",
+                                                "message": "Alert 'DB errors to Telegram' triggered: value=2 threshold=1 window=300s",
+                                                "channel": "telegram",
+                                                "value": 2,
+                                                "threshold": 1
+                                              }
+                                            ]
+                                            """
+                            )
+                    )
+            )
+    })
     public List<AlertHistoryItemDto> history() {
         return alertRuleService.history();
     }

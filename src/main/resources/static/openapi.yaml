@@ -1,0 +1,822 @@
+openapi: 3.0.3
+info:
+  title: Aeza Server API
+  version: 1.0.0
+  description: REST, WebSocket and SSE API for frontend and agents.
+servers:
+  - url: /
+    description: Current server
+paths:
+  /api/v1/health:
+    get:
+      summary: Health check
+      description: Returns backend status and dependency summary.
+      responses:
+        "200":
+          description: Health response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              example:
+                status: "UP"
+                dependencies:
+                  opensearch: "UP"
+                  postgres: "UP"
+
+  /api/v1/logs/search:
+    get:
+      summary: Search logs
+      description: Returns logs with total count and aggregations for frontend filters.
+      parameters:
+        - in: query
+          name: q
+          required: false
+          schema:
+            type: string
+          description: Full-text query.
+        - in: query
+          name: host
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: service
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: level
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: from
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: size
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Search response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+              example:
+                items:
+                  - timestamp: "2026-03-21T11:33:50Z"
+                    level: "ERROR"
+                    message: "database failed 2"
+                    host: "srv-1"
+                    service: "backend"
+                    sourceType: "file"
+                    sourcePath: "/var/log/app.log"
+                    tags: ["prod"]
+                    metadata:
+                      env: "prod"
+                    agentId: "agent-1"
+                total: 1
+                aggregations:
+                  hosts:
+                    srv-1: 1
+                  services:
+                    backend: 1
+                  levels:
+                    ERROR: 1
+
+  /api/v1/dashboard/summary:
+    get:
+      summary: Get summary metrics
+      parameters:
+        - in: query
+          name: from
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Summary response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+              example:
+                totalLogs: 120
+                errors: 18
+                warnings: 22
+                hosts: 4
+                services: 6
+
+  /api/v1/dashboard/timeseries:
+    get:
+      summary: Get timeseries
+      parameters:
+        - in: query
+          name: from
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Timeseries response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardTimeseries"
+              example:
+                buckets:
+                  - timestamp: "2026-03-21T11:00:00Z"
+                    errors: 3
+                    warnings: 2
+
+  /api/v1/dashboard/top-hosts:
+    get:
+      summary: Get top hosts
+      parameters:
+        - in: query
+          name: from
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Top hosts response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardTopHosts"
+              example:
+                items:
+                  - host: "srv-1"
+                    count: 53
+                  - host: "srv-2"
+                    count: 17
+
+  /api/v1/dashboard/top-services:
+    get:
+      summary: Get top services
+      parameters:
+        - in: query
+          name: from
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Top services response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardTopServices"
+              example:
+                items:
+                  - service: "backend"
+                    count: 53
+                  - service: "postgres"
+                    count: 11
+
+  /api/v1/agents:
+    get:
+      summary: List agents
+      description: Returns current list of agents for frontend.
+      responses:
+        "200":
+          description: Agent list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentStatus"
+              example:
+                - agentId: "agent-1"
+                  host: "srv-1"
+                  status: "ONLINE"
+                  lastSeen: "2026-03-21T11:24:32.636001841Z"
+                  bufferedCount: 0
+
+  /api/v1/agents/{id}:
+    get:
+      summary: Get agent details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentStatus"
+              example:
+                agentId: "agent-1"
+                host: "srv-1"
+                status: "ONLINE"
+                lastSeen: "2026-03-21T11:24:32.636001841Z"
+                bufferedCount: 0
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+              example:
+                timestamp: "2026-03-21T12:00:00Z"
+                status: 404
+                error: "Not Found"
+                message: "agent not found"
+                path: "/api/v1/agents/agent-404"
+
+  /api/v1/agents/heartbeat:
+    post:
+      summary: Update agent heartbeat
+      description: Agent endpoint for updating current status and buffered count.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeartbeatRequest"
+            example:
+              agentId: "agent-1"
+              host: "srv-1"
+              status: "ONLINE"
+              bufferedCount: 0
+      responses:
+        "200":
+          description: Agent status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentStatus"
+              example:
+                agentId: "agent-1"
+                host: "srv-1"
+                status: "ONLINE"
+                lastSeen: "2026-03-21T11:24:32.636001841Z"
+                bufferedCount: 0
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+              example:
+                timestamp: "2026-03-21T12:00:00Z"
+                status: 400
+                error: "Bad Request"
+                message: "validation failed"
+                path: "/api/v1/agents/heartbeat"
+
+  /api/v1/ingest/batch:
+    post:
+      summary: Ingest batch of logs
+      description: Agent endpoint for sending a batch of logs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestBatchRequest"
+            example:
+              agentId: "agent-1"
+              events:
+                - timestamp: "2026-03-21T11:40:00Z"
+                  level: "ERROR"
+                  message: "database timeout"
+                  host: "srv-1"
+                  service: "backend"
+                  sourceType: "file"
+                  sourcePath: "/var/log/app.log"
+                  tags: ["prod", "db"]
+                  metadata:
+                    env: "prod"
+                    component: "jdbc"
+      responses:
+        "200":
+          description: Ingest accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestAckResponse"
+              example:
+                status: "ok"
+                accepted: 1
+                requestId: "27aa717b-688f-458c-954f-f8fa8d8cbd01"
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+              example:
+                timestamp: "2026-03-21T12:00:00Z"
+                status: 400
+                error: "Bad Request"
+                message: "validation failed"
+                path: "/api/v1/ingest/batch"
+
+  /api/v1/alerts/rules:
+    get:
+      summary: List alert rules
+      responses:
+        "200":
+          description: Alert rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AlertRuleResponse"
+              example:
+                - id: 1
+                  name: "DB errors to Telegram"
+                  enabled: true
+                  conditionType: "count_gt"
+                  query: "database"
+                  threshold: 1
+                  windowSeconds: 300
+                  cooldownSeconds: 300
+                  channel: "telegram"
+                  level: "ERROR"
+                  createdAt: "2026-03-21T11:27:14.296289Z"
+                  updatedAt: "2026-03-21T11:27:14.296289Z"
+                  lastTriggeredAt: null
+    post:
+      summary: Create alert rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertRuleCreateRequest"
+            example:
+              name: "DB errors to Telegram"
+              enabled: true
+              conditionType: "count_gt"
+              query: "database"
+              threshold: 1
+              windowSeconds: 300
+              cooldownSeconds: 300
+              channel: "telegram"
+              level: "ERROR"
+      responses:
+        "200":
+          description: Created alert rule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertRuleResponse"
+
+  /api/v1/alerts/rules/{id}:
+    put:
+      summary: Update alert rule
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertRuleCreateRequest"
+      responses:
+        "200":
+          description: Updated alert rule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertRuleResponse"
+    delete:
+      summary: Delete alert rule
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: Rule deleted
+
+  /api/v1/alerts/history:
+    get:
+      summary: List alert history
+      responses:
+        "200":
+          description: Alert history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AlertHistoryItem"
+              example:
+                - id: 1
+                  ruleId: 1
+                  ruleName: "DB errors to Telegram"
+                  triggeredAt: "2026-03-21T11:36:55.691Z"
+                  message: "Alert 'DB errors to Telegram' triggered: value=2 threshold=1 window=300s"
+                  channel: "telegram"
+                  value: 2
+                  threshold: 1
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - dependencies
+      properties:
+        status:
+          type: string
+        dependencies:
+          type: object
+          additionalProperties:
+            type: string
+
+    LogSearchItem:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+        message:
+          type: string
+        host:
+          type: string
+        service:
+          type: string
+        sourceType:
+          type: string
+          nullable: true
+        sourcePath:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        agentId:
+          type: string
+
+    SearchResponse:
+      type: object
+      required:
+        - items
+        - total
+        - aggregations
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/LogSearchItem"
+        total:
+          type: integer
+          format: int64
+        aggregations:
+          type: object
+          additionalProperties: true
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalLogs:
+          type: integer
+          format: int64
+        errors:
+          type: integer
+          format: int64
+        warnings:
+          type: integer
+          format: int64
+        hosts:
+          type: integer
+          format: int64
+        services:
+          type: integer
+          format: int64
+
+    DashboardTimeseriesBucket:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        errors:
+          type: integer
+          format: int64
+        warnings:
+          type: integer
+          format: int64
+
+    DashboardTimeseries:
+      type: object
+      properties:
+        buckets:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardTimeseriesBucket"
+
+    DashboardTopHostItem:
+      type: object
+      properties:
+        host:
+          type: string
+        count:
+          type: integer
+          format: int64
+
+    DashboardTopHosts:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardTopHostItem"
+
+    DashboardTopServiceItem:
+      type: object
+      properties:
+        service:
+          type: string
+        count:
+          type: integer
+          format: int64
+
+    DashboardTopServices:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardTopServiceItem"
+
+    AgentStatus:
+      type: object
+      properties:
+        agentId:
+          type: string
+        host:
+          type: string
+        status:
+          type: string
+        lastSeen:
+          type: string
+          format: date-time
+        bufferedCount:
+          type: integer
+
+    HeartbeatRequest:
+      type: object
+      required:
+        - agentId
+        - host
+        - status
+        - bufferedCount
+      properties:
+        agentId:
+          type: string
+        host:
+          type: string
+        status:
+          type: string
+        bufferedCount:
+          type: integer
+          minimum: 0
+
+    LogEvent:
+      type: object
+      required:
+        - timestamp
+        - level
+        - message
+        - host
+        - service
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+        message:
+          type: string
+        host:
+          type: string
+        service:
+          type: string
+        sourceType:
+          type: string
+          nullable: true
+        sourcePath:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        agentId:
+          type: string
+          nullable: true
+
+    IngestBatchRequest:
+      type: object
+      required:
+        - agentId
+        - events
+      properties:
+        agentId:
+          type: string
+        events:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/LogEvent"
+
+    IngestAckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        accepted:
+          type: integer
+        requestId:
+          type: string
+
+    AlertRuleCreateRequest:
+      type: object
+      required:
+        - name
+        - conditionType
+        - threshold
+        - windowSeconds
+        - cooldownSeconds
+        - channel
+      properties:
+        name:
+          type: string
+        enabled:
+          type: boolean
+        conditionType:
+          type: string
+          enum:
+            - count_gt
+            - contains_pattern
+            - error_rate_gt
+        query:
+          type: string
+          nullable: true
+        threshold:
+          type: integer
+          format: int64
+          minimum: 1
+        windowSeconds:
+          type: integer
+          format: int64
+          minimum: 10
+        cooldownSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+        channel:
+          type: string
+          enum:
+            - telegram
+            - webhook
+        level:
+          type: string
+          nullable: true
+
+    AlertRuleResponse:
+      allOf:
+        - $ref: "#/components/schemas/AlertRuleCreateRequest"
+        - type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+            lastTriggeredAt:
+              type: string
+              format: date-time
+              nullable: true
+
+    AlertHistoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        ruleId:
+          type: integer
+          format: int64
+        ruleName:
+          type: string
+        triggeredAt:
+          type: string
+          format: date-time
+        message:
+          type: string
+        channel:
+          type: string
+        value:
+          type: integer
+          format: int64
+        threshold:
+          type: integer
+          format: int64
+
+    ApiErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
