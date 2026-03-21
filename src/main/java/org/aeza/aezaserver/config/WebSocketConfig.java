@@ -10,14 +10,16 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
     private final LiveWebSocketHandler liveWebSocketHandler;
+    private final CorsProperties corsProperties;
 
-    public WebSocketConfig(LiveWebSocketHandler liveWebSocketHandler) {
+    public WebSocketConfig(LiveWebSocketHandler liveWebSocketHandler, CorsProperties corsProperties) {
         this.liveWebSocketHandler = liveWebSocketHandler;
+        this.corsProperties = corsProperties;
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(liveWebSocketHandler, "/api/v1/live/ws")
-                .setAllowedOriginPatterns("*");
+                .setAllowedOriginPatterns(corsProperties.getAllowedOriginPatterns().toArray(String[]::new));
     }
 }
