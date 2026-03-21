@@ -1,5 +1,7 @@
 package org.aeza.aezaserver.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.aeza.aezaserver.dto.dashboard.DashboardSummaryDto;
 import org.aeza.aezaserver.dto.dashboard.DashboardTimeseriesDto;
 import org.aeza.aezaserver.dto.dashboard.DashboardTopHostsDto;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Instant;
 @RestController
 @RequestMapping("/api/v1/dashboard")
+@Tag(name = "Dashboard", description = "Dashboard widgets and aggregations")
 public class DashboardController {
     private final DashboardService dashboardService;
 
@@ -22,6 +25,7 @@ public class DashboardController {
     }
 
     @GetMapping("/summary")
+    @Operation(summary = "Get summary metrics", description = "Returns totals for logs, errors, warnings, hosts and services.")
     public DashboardSummaryDto summary(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to
@@ -30,6 +34,7 @@ public class DashboardController {
     }
 
     @GetMapping("/timeseries")
+    @Operation(summary = "Get timeseries", description = "Returns time buckets for errors and warnings.")
     public DashboardTimeseriesDto timeseries(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to
@@ -38,6 +43,7 @@ public class DashboardController {
     }
 
     @GetMapping("/top-hosts")
+    @Operation(summary = "Get top hosts", description = "Returns hosts sorted by log count.")
     public DashboardTopHostsDto topHosts(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
@@ -47,6 +53,7 @@ public class DashboardController {
     }
 
     @GetMapping("/top-services")
+    @Operation(summary = "Get top services", description = "Returns services sorted by log count.")
     public DashboardTopServicesDto topServices(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,

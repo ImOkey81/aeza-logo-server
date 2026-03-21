@@ -1,6 +1,8 @@
 package org.aeza.aezaserver.integration;
 
 import org.aeza.aezaserver.config.IntegrationConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -9,6 +11,8 @@ import java.util.Map;
 
 @Component
 public class TelegramClient {
+    private static final Logger log = LoggerFactory.getLogger(TelegramClient.class);
+
     private final String botToken;
     private final String chatId;
     private final RestClient restClient;
@@ -24,14 +28,19 @@ public class TelegramClient {
 
     public void send(String message) {
         if (botToken.isBlank() || chatId.isBlank()) {
+            log.warn("Telegram alert skipped: bot token or chat id is empty");
             return;
         }
         String url = "https://api.telegram.org/bot" + botToken + "/sendMessage";
-        restClient.post()
-                .uri(url)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(Map.of("chat_id", chatId, "text", message))
-                .retrieve()
-                .toBodilessEntity();
+        try {
+            restClient.post()
+                    .uri(url)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of("chat_id", chatId, "text", message))
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RuntimeException ex) {
+            log.error("Telegram alert send failed: {}", ex.getMessage());
+        }
     }
 }
