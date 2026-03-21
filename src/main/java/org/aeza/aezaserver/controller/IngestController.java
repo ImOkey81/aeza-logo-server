@@ -1,8 +1,13 @@
 package org.aeza.aezaserver.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.aeza.aezaserver.config.OpenSearchProperties;
 import org.aeza.aezaserver.dto.agents.AgentStatusDto;
 import org.aeza.aezaserver.dto.ingest.HeartbeatRequest;
 import org.aeza.aezaserver.dto.ingest.IngestAckResponse;
@@ -23,13 +28,16 @@ import java.util.Map;
 public class IngestController {
     private final IngestService ingestService;
     private final AgentService agentService;
+    private final OpenSearchProperties openSearchProperties;
 
     public IngestController(
             IngestService ingestService,
-            AgentService agentService
+            AgentService agentService,
+            OpenSearchProperties openSearchProperties
     ) {
         this.ingestService = ingestService;
         this.agentService = agentService;
+        this.openSearchProperties = openSearchProperties;
     }
 
     @PostMapping("/ingest/batch")
@@ -46,7 +54,33 @@ public class IngestController {
 
     @GetMapping("/health")
     @Operation(summary = "Health check", description = "Returns backend status and dependency summary.")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Application health",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                              "status": "UP",
+                                              "dependencies": {
+                                                "opensearch": "UP",
+                                                "postgres": "UP"
+                                              }
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
     public Map<String, Object> health() {
-        return Map.of("status", "UP", "dependencies", Map.of("opensearch", "UP", "postgres", "MVP_IN_MEMORY"));
+        return Map.of(
+                "status", "UP",
+                "dependencies", Map.of(
+                        "opensearch", openSearchProperties.enabled() ? "UP" : "DISABLED",
+                        "postgres", "UP"
+                )
+        );
     }
 }
