@@ -4,8 +4,10 @@ info:
   version: 1.0.0
   description: REST, WebSocket and SSE API for frontend and agents.
 servers:
+  - url: http://158.160.205.79:8087
+    description: Current deployed server
   - url: /
-    description: Current server
+    description: Relative current server
 paths:
   /api/v1/health:
     get:
