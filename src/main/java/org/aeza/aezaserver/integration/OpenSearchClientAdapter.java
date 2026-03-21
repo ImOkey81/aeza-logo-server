@@ -34,6 +34,11 @@ public class OpenSearchClientAdapter {
     private static final Logger log = LoggerFactory.getLogger(OpenSearchClientAdapter.class);
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
     };
+    private static final int LEGACY_HOST_MAX = 255;
+    private static final int LEGACY_SERVICE_MAX = 255;
+    private static final int LEGACY_SOURCE_TYPE_MAX = 128;
+    private static final int LEGACY_SOURCE_PATH_MAX = 1024;
+    private static final int LEGACY_AGENT_ID_MAX = 128;
 
     private final LogEventRepository logEventRepository;
     private final ObjectMapper objectMapper;
@@ -63,13 +68,16 @@ public class OpenSearchClientAdapter {
             entity.setTimestamp(event.timestamp());
             entity.setLevel(normalize(event.level()));
             entity.setMessage(event.message());
-            entity.setHost(event.host());
-            entity.setService(event.service());
-            entity.setSourceType(event.sourceType());
-            entity.setSourcePath(event.sourcePath());
+            entity.setHost(trimToDbLimit(event.host(), LEGACY_HOST_MAX));
+            entity.setService(trimToDbLimit(event.service(), LEGACY_SERVICE_MAX));
+            entity.setSourceType(trimToDbLimit(event.sourceType(), LEGACY_SOURCE_TYPE_MAX));
+            entity.setSourcePath(trimToDbLimit(event.sourcePath(), LEGACY_SOURCE_PATH_MAX));
             entity.setTags(writeJson(event.tags() == null ? List.of() : event.tags()));
             entity.setMetadata(writeJson(event.metadata() == null ? Map.of() : event.metadata()));
-            entity.setAgentId(event.agentId() == null || event.agentId().isBlank() ? agentId : event.agentId());
+            entity.setAgentId(trimToDbLimit(
+                    event.agentId() == null || event.agentId().isBlank() ? agentId : event.agentId(),
+                    LEGACY_AGENT_ID_MAX
+            ));
             return entity;
         }).toList();
 
@@ -556,6 +564,14 @@ public class OpenSearchClientAdapter {
         } catch (JsonProcessingException ex) {
             throw new IllegalStateException("failed to parse OpenSearch response", ex);
         }
+    }
+
+    private String trimToDbLimit(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        log.warn("Truncating oversized log field from {} to {} characters for Postgres storage", value.length(), maxLength);
+        return value.substring(0, maxLength);
     }
 
     private List<String> readTags(String value) {
