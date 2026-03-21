@@ -23,7 +23,7 @@ public class LiveWebSocketHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper;
 
     public LiveWebSocketHandler(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+        this.objectMapper = objectMapper.copy().findAndRegisterModules();
     }
 
     @Override

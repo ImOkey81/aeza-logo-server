@@ -1,5 +1,7 @@
 package org.aeza.aezaserver.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.aeza.aezaserver.dto.search.SearchResponseDto;
 import org.aeza.aezaserver.service.LiveStreamService;
 import org.aeza.aezaserver.service.SearchService;
@@ -14,6 +16,7 @@ import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/v1")
+@Tag(name = "Search", description = "Search and realtime stream endpoints")
 public class SearchController {
     private final SearchService searchService;
     private final LiveStreamService liveStreamService;
@@ -24,6 +27,7 @@ public class SearchController {
     }
 
     @GetMapping("/logs/search")
+    @Operation(summary = "Search logs", description = "Supports full-text search and filtering by host, service, level and time range.")
     public SearchResponseDto search(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String host,
@@ -38,6 +42,7 @@ public class SearchController {
     }
 
     @GetMapping("/live/sse")
+    @Operation(summary = "Open SSE stream", description = "Server-sent events stream for log_event, agent_status and alert_triggered.")
     public SseEmitter live() {
         return liveStreamService.subscribe();
     }
