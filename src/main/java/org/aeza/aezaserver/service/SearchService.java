@@ -25,8 +25,26 @@ public class SearchService {
             int page,
             int size
     ) {
+        return search(q, host, service, level, from, to, null, null, null, null, null, page, size);
+    }
+
+    public SearchResponseDto search(
+            String q,
+            String host,
+            String service,
+            String level,
+            Instant from,
+            Instant to,
+            String agentId,
+            String fingerprint,
+            Boolean aggregated,
+            Boolean sampled,
+            Boolean burstDetected,
+            int page,
+            int size
+    ) {
         OpenSearchClientAdapter.SearchResult result = openSearchClientAdapter.search(
-                new SearchCriteria(q, host, service, level, from, to),
+                new SearchCriteria(q, host, service, level, from, to, agentId, fingerprint, aggregated, sampled, burstDetected),
                 page,
                 size
         );

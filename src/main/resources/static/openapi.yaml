@@ -29,14 +29,14 @@ paths:
   /api/v1/logs/search:
     get:
       summary: Search logs
-      description: Returns logs with total count and aggregations for frontend filters.
+      description: Returns logs with total count and aggregations for frontend filters, including agent-side metadata.
       parameters:
         - in: query
           name: q
           required: false
           schema:
             type: string
-          description: Full-text query.
+          description: Full-text query over message, host, service, sourcePath, messageTemplate and fingerprint.
         - in: query
           name: host
           required: false
@@ -52,6 +52,31 @@ paths:
           required: false
           schema:
             type: string
+        - in: query
+          name: agentId
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: fingerprint
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: aggregated
+          required: false
+          schema:
+            type: boolean
+        - in: query
+          name: sampled
+          required: false
+          schema:
+            type: boolean
+        - in: query
+          name: burstDetected
+          required: false
+          schema:
+            type: boolean
         - in: query
           name: from
           required: false
@@ -88,22 +113,28 @@ paths:
                   - timestamp: "2026-03-21T11:33:50Z"
                     level: "ERROR"
                     message: "database failed 2"
-                    host: "srv-1"
-                    service: "backend"
+                    host: "agent-vm-01"
+                    service: "nginx"
                     sourceType: "file"
-                    sourcePath: "/var/log/app.log"
-                    tags: ["prod"]
+                    sourcePath: "/var/log/nginx/error.log"
+                    tags: ["prod", "agent"]
                     metadata:
-                      env: "prod"
-                    agentId: "agent-1"
+                      fingerprint: "d5c98f0a8be1d4ac"
+                      messageTemplate: "database failed <num>"
+                      occurrences: 12
+                      aggregated: true
+                      burstDetected: true
+                    agentId: "agent-dev-01"
                 total: 1
                 aggregations:
                   hosts:
-                    srv-1: 1
+                    agent-vm-01: 1
                   services:
-                    backend: 1
+                    nginx: 1
                   levels:
                     ERROR: 1
+                  fingerprints:
+                    d5c98f0a8be1d4ac: 1
 
   /api/v1/live/sse:
     get:
@@ -222,6 +253,9 @@ paths:
                 warnings: 22
                 hosts: 4
                 services: 6
+                aggregatedEvents: 11
+                sampledEvents: 4
+                burstEvents: 7
 
   /api/v1/dashboard/timeseries:
     get:
@@ -255,6 +289,7 @@ paths:
   /api/v1/dashboard/top-hosts:
     get:
       summary: Get top hosts
+      description: Returns hosts sorted by observed log volume.
       parameters:
         - in: query
           name: from
@@ -291,6 +326,7 @@ paths:
   /api/v1/dashboard/top-services:
     get:
       summary: Get top services
+      description: Returns services sorted by observed log volume.
       parameters:
         - in: query
           name: from
@@ -323,6 +359,44 @@ paths:
                     count: 53
                   - service: "postgres"
                     count: 11
+
+  /api/v1/dashboard/top-patterns:
+    get:
+      summary: Get top patterns
+      description: Returns noisy patterns grouped by fingerprint and message template.
+      parameters:
+        - in: query
+          name: from
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Top patterns response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardTopPatterns"
+              example:
+                items:
+                  - fingerprint: "d5c98f0a8be1d4ac"
+                    template: "database failed <num>"
+                    count: 96
+                    sampled: true
+                    burstDetected: true
 
   /api/v1/agents:
     get:
@@ -664,6 +738,15 @@ components:
         services:
           type: integer
           format: int64
+        aggregatedEvents:
+          type: integer
+          format: int64
+        sampledEvents:
+          type: integer
+          format: int64
+        burstEvents:
+          type: integer
+          format: int64
 
     DashboardTimeseriesBucket:
       type: object
@@ -719,6 +802,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/DashboardTopServiceItem"
+
+    DashboardTopPatternItem:
+      type: object
+      properties:
+        fingerprint:
+          type: string
+        template:
+          type: string
+        count:
+          type: integer
+          format: int64
+        sampled:
+          type: boolean
+        burstDetected:
+          type: boolean
+
+    DashboardTopPatterns:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardTopPatternItem"
 
     AgentStatus:
       type: object

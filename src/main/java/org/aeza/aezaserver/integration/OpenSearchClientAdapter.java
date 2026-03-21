@@ -147,7 +147,8 @@ public class OpenSearchClientAdapter {
         request.put("aggs", Map.of(
                 "levels", Map.of("terms", Map.of("field", "level.keyword", "size", 20)),
                 "hosts", Map.of("terms", Map.of("field", "host.keyword", "size", 50)),
-                "services", Map.of("terms", Map.of("field", "service.keyword", "size", 50))
+                "services", Map.of("terms", Map.of("field", "service.keyword", "size", 50)),
+                "fingerprints", Map.of("terms", Map.of("field", "metadata.fingerprint.keyword", "size", 50))
         ));
 
         try {
@@ -248,6 +249,60 @@ public class OpenSearchClientAdapter {
         return cardinality("service.keyword", criteria, this::uniqueServicesFallback, "uniqueServices");
     }
 
+    @Transactional(readOnly = true)
+    public long observedCount(SearchCriteria criteria) {
+        return applyFilters(criteria).stream().mapToLong(this::occurrencesOf).sum();
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Long> topHostsObserved(SearchCriteria criteria, int limit) {
+        return termsAggByOccurrences(applyFilters(criteria), LogDocument::host, limit);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Long> topServicesObserved(SearchCriteria criteria, int limit) {
+        return termsAggByOccurrences(applyFilters(criteria), LogDocument::service, limit);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TimeseriesBucket> timeseriesObserved(SearchCriteria criteria) {
+        return timeseriesObservedFallback(criteria);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PatternBucket> topPatterns(SearchCriteria criteria, int limit) {
+        Map<String, PatternAccumulator> buckets = new HashMap<>();
+        for (LogDocument doc : applyFilters(criteria)) {
+            String fingerprint = metadataString(doc.metadata(), "fingerprint");
+            if (!hasText(fingerprint)) {
+                continue;
+            }
+
+            PatternAccumulator bucket = buckets.computeIfAbsent(
+                    fingerprint,
+                    ignored -> new PatternAccumulator(
+                            fingerprint,
+                            metadataString(doc.metadata(), "messageTemplate"),
+                            0L,
+                            false,
+                            false
+                    )
+            );
+            bucket.count += occurrencesOf(doc);
+            bucket.sampled = bucket.sampled || metadataBoolean(doc.metadata(), "sampled");
+            bucket.burstDetected = bucket.burstDetected || metadataBoolean(doc.metadata(), "burstDetected");
+            if (!hasText(bucket.template) && hasText(metadataString(doc.metadata(), "messageTemplate"))) {
+                bucket.template = metadataString(doc.metadata(), "messageTemplate");
+            }
+        }
+
+        return buckets.values().stream()
+                .sorted((left, right) -> Long.compare(right.count, left.count))
+                .limit(Math.max(1, limit))
+                .map(bucket -> new PatternBucket(bucket.fingerprint, bucket.template, bucket.count, bucket.sampled, bucket.burstDetected))
+                .toList();
+    }
+
     private Map<String, Long> termsAggregation(
             String field,
             SearchCriteria criteria,
@@ -325,6 +380,7 @@ public class OpenSearchClientAdapter {
         aggs.put("levels", termsAgg(filtered, LogDocument::level));
         aggs.put("hosts", termsAgg(filtered, LogDocument::host));
         aggs.put("services", termsAgg(filtered, LogDocument::service));
+        aggs.put("fingerprints", termsAgg(filtered, doc -> metadataString(doc.metadata(), "fingerprint")));
 
         return new SearchResult(items, filtered.size(), aggs);
     }
@@ -338,15 +394,20 @@ public class OpenSearchClientAdapter {
     }
 
     private List<TimeseriesBucket> timeseriesFallback(SearchCriteria criteria) {
+        return timeseriesObservedFallback(criteria);
+    }
+
+    private List<TimeseriesBucket> timeseriesObservedFallback(SearchCriteria criteria) {
         Map<Instant, long[]> buckets = new HashMap<>();
         for (LogDocument doc : applyFilters(criteria)) {
             Instant key = doc.timestamp().truncatedTo(ChronoUnit.MINUTES);
             long[] values = buckets.computeIfAbsent(key, ignored -> new long[2]);
+            long occurrences = occurrencesOf(doc);
             if ("ERROR".equals(doc.level())) {
-                values[0]++;
+                values[0] += occurrences;
             }
             if ("WARN".equals(doc.level()) || "WARNING".equals(doc.level())) {
-                values[1]++;
+                values[1] += occurrences;
             }
         }
 
@@ -372,6 +433,11 @@ public class OpenSearchClientAdapter {
                 .filter(doc -> matches(doc.host(), criteria.host()))
                 .filter(doc -> matches(doc.service(), criteria.service()))
                 .filter(doc -> matches(normalize(doc.level()), normalize(criteria.level())))
+                .filter(doc -> matches(doc.agentId(), criteria.agentId()))
+                .filter(doc -> matches(metadataString(doc.metadata(), "fingerprint"), criteria.fingerprint()))
+                .filter(doc -> matchesMetadataBoolean(doc.metadata(), "aggregated", criteria.aggregated()))
+                .filter(doc -> matchesMetadataBoolean(doc.metadata(), "sampled", criteria.sampled()))
+                .filter(doc -> matchesMetadataBoolean(doc.metadata(), "burstDetected", criteria.burstDetected()))
                 .filter(doc -> matchesQuery(doc, criteria.q()))
                 .sorted(Comparator.comparing(LogDocument::timestamp).reversed())
                 .toList();
@@ -429,12 +495,32 @@ public class OpenSearchClientAdapter {
             filters.add(Map.of("term", Map.of("level.keyword", normalize(criteria.level()))));
         }
 
+        if (hasText(criteria.agentId())) {
+            filters.add(Map.of("term", Map.of("agentId.keyword", criteria.agentId())));
+        }
+
+        if (hasText(criteria.fingerprint())) {
+            filters.add(Map.of("term", Map.of("metadata.fingerprint.keyword", criteria.fingerprint())));
+        }
+
+        if (criteria.aggregated() != null) {
+            filters.add(Map.of("term", Map.of("metadata.aggregated", criteria.aggregated())));
+        }
+
+        if (criteria.sampled() != null) {
+            filters.add(Map.of("term", Map.of("metadata.sampled", criteria.sampled())));
+        }
+
+        if (criteria.burstDetected() != null) {
+            filters.add(Map.of("term", Map.of("metadata.burstDetected", criteria.burstDetected())));
+        }
+
         if (hasText(criteria.q())) {
             filters.add(Map.of(
                     "multi_match",
                     Map.of(
                             "query", criteria.q(),
-                            "fields", List.of("message", "host", "service")
+                            "fields", List.of("message", "host", "service", "sourcePath", "metadata.messageTemplate", "metadata.fingerprint")
                     )
             ));
         }
@@ -486,7 +572,8 @@ public class OpenSearchClientAdapter {
         return Map.of(
                 "levels", parseTermsBuckets(asMap(aggs.get("levels"))),
                 "hosts", parseTermsBuckets(asMap(aggs.get("hosts"))),
-                "services", parseTermsBuckets(asMap(aggs.get("services")))
+                "services", parseTermsBuckets(asMap(aggs.get("services"))),
+                "fingerprints", parseTermsBuckets(asMap(aggs.get("fingerprints")))
         );
     }
 
@@ -533,9 +620,12 @@ public class OpenSearchClientAdapter {
             return true;
         }
         String lower = q.toLowerCase(Locale.ROOT);
-        return doc.message().toLowerCase(Locale.ROOT).contains(lower)
-                || doc.host().toLowerCase(Locale.ROOT).contains(lower)
-                || doc.service().toLowerCase(Locale.ROOT).contains(lower);
+        return safeLower(doc.message()).contains(lower)
+                || safeLower(doc.host()).contains(lower)
+                || safeLower(doc.service()).contains(lower)
+                || safeLower(doc.sourcePath()).contains(lower)
+                || safeLower(metadataString(doc.metadata(), "messageTemplate")).contains(lower)
+                || safeLower(metadataString(doc.metadata(), "fingerprint")).contains(lower);
     }
 
     private boolean hasText(String value) {
@@ -544,10 +634,56 @@ public class OpenSearchClientAdapter {
 
     private Map<String, Long> termsAgg(List<LogDocument> docs, java.util.function.Function<LogDocument, String> extractor) {
         return docs.stream()
-                .collect(Collectors.groupingBy(extractor, Collectors.counting()))
+                .map(doc -> Map.entry(extractor.apply(doc), 1L))
+                .filter(entry -> hasText(entry.getKey()))
+                .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.summingLong(Map.Entry::getValue)))
                 .entrySet().stream()
                 .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, java.util.LinkedHashMap::new));
+    }
+
+    private Map<String, Long> termsAggByOccurrences(
+            List<LogDocument> docs,
+            java.util.function.Function<LogDocument, String> extractor,
+            int limit
+    ) {
+        return docs.stream()
+                .map(doc -> Map.entry(extractor.apply(doc), occurrencesOf(doc)))
+                .filter(entry -> hasText(entry.getKey()))
+                .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.summingLong(Map.Entry::getValue)))
+                .entrySet().stream()
+                .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
+                .limit(Math.max(1, limit))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, java.util.LinkedHashMap::new));
+    }
+
+    private long occurrencesOf(LogDocument doc) {
+        Object raw = doc.metadata().get("occurrences");
+        if (raw instanceof Number number && number.longValue() > 0) {
+            return number.longValue();
+        }
+        return 1L;
+    }
+
+    private String metadataString(Map<String, Object> metadata, String key) {
+        Object value = metadata.get(key);
+        return value == null ? "" : String.valueOf(value);
+    }
+
+    private boolean metadataBoolean(Map<String, Object> metadata, String key) {
+        Object value = metadata.get(key);
+        return value instanceof Boolean flag && flag;
+    }
+
+    private boolean matchesMetadataBoolean(Map<String, Object> metadata, String key, Boolean expected) {
+        if (expected == null) {
+            return true;
+        }
+        return metadataBoolean(metadata, key) == expected;
+    }
+
+    private String safeLower(String value) {
+        return value == null ? "" : value.toLowerCase(Locale.ROOT);
     }
 
     private String writeJson(Object value) {
@@ -650,5 +786,30 @@ public class OpenSearchClientAdapter {
             Map<String, Object> metadata,
             String agentId
     ) {
+    }
+
+    public record PatternBucket(
+            String fingerprint,
+            String template,
+            long count,
+            boolean sampled,
+            boolean burstDetected
+    ) {
+    }
+
+    private static final class PatternAccumulator {
+        private final String fingerprint;
+        private String template;
+        private long count;
+        private boolean sampled;
+        private boolean burstDetected;
+
+        private PatternAccumulator(String fingerprint, String template, long count, boolean sampled, boolean burstDetected) {
+            this.fingerprint = fingerprint;
+            this.template = template;
+            this.count = count;
+            this.sampled = sampled;
+            this.burstDetected = burstDetected;
+        }
     }
 }
