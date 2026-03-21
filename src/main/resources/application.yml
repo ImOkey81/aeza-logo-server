@@ -34,5 +34,7 @@ integration:
 springdoc:
   swagger-ui:
     path: /docs
+    url: /openapi.yaml
+    disable-swagger-default-url: true
   api-docs:
     path: /docs/openapi

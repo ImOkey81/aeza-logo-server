@@ -1,6 +1,10 @@
 package org.aeza.aezaserver.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.aeza.aezaserver.dto.search.SearchResponseDto;
 import org.aeza.aezaserver.service.LiveStreamService;
@@ -28,6 +32,49 @@ public class SearchController {
 
     @GetMapping("/logs/search")
     @Operation(summary = "Search logs", description = "Supports full-text search and filtering by host, service, level and time range.")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Search result",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                              "items": [
+                                                {
+                                                  "timestamp": "2026-03-21T11:33:50Z",
+                                                  "level": "ERROR",
+                                                  "message": "database failed 2",
+                                                  "host": "srv-1",
+                                                  "service": "backend",
+                                                  "sourceType": "file",
+                                                  "sourcePath": "/var/log/app.log",
+                                                  "tags": ["prod"],
+                                                  "metadata": {
+                                                    "env": "prod"
+                                                  },
+                                                  "agentId": "agent-1"
+                                                }
+                                              ],
+                                              "total": 1,
+                                              "aggregations": {
+                                                "hosts": {
+                                                  "srv-1": 1
+                                                },
+                                                "services": {
+                                                  "backend": 1
+                                                },
+                                                "levels": {
+                                                  "ERROR": 1
+                                                }
+                                              }
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
     public SearchResponseDto search(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String host,
