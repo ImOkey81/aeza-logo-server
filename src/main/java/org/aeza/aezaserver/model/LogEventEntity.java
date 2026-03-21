@@ -29,7 +29,7 @@ public class LogEventEntity {
     @Column(nullable = false, length = 32)
     private String level;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
     @Column(nullable = false, length = 2048)
