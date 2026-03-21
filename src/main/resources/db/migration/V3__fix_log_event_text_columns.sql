@@ -1,0 +1,6 @@
+ALTER TABLE log_events
+    ALTER COLUMN message TYPE TEXT,
+    ALTER COLUMN metadata TYPE TEXT,
+    ALTER COLUMN tags TYPE TEXT,
+    ALTER COLUMN source_path TYPE TEXT,
+    ALTER COLUMN service TYPE TEXT;

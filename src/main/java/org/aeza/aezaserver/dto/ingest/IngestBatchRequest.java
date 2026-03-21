@@ -9,6 +9,7 @@ import java.util.List;
 
 public record IngestBatchRequest(
         @NotBlank @Size(max = ValidationLimits.AGENT_ID_MAX) String agentId,
+        Long sequence,
         @NotEmpty List<@Valid LogEventDto> events
 ) {
 }

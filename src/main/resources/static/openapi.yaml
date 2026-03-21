@@ -301,9 +301,14 @@ paths:
               $ref: "#/components/schemas/HeartbeatRequest"
             example:
               agentId: "agent-1"
-              host: "srv-1"
+              hostName: "srv-1"
+              hostIp: "194.113.106.38"
               status: "ONLINE"
               bufferedCount: 0
+              lastSequence: 1774097148813
+              watchedSources:
+                - "/var/log/nginx/error.log"
+                - "/var/log/syslog"
       responses:
         "200":
           description: Agent status updated
@@ -342,6 +347,7 @@ paths:
               $ref: "#/components/schemas/IngestBatchRequest"
             example:
               agentId: "agent-1"
+              sequence: 1774097148813
               events:
                 - timestamp: "2026-03-21T11:40:00Z"
                   level: "ERROR"
@@ -643,19 +649,31 @@ components:
       type: object
       required:
         - agentId
-        - host
+        - hostName
         - status
         - bufferedCount
       properties:
         agentId:
           type: string
-        host:
+        hostName:
           type: string
+        hostIp:
+          type: string
+          nullable: true
         status:
           type: string
         bufferedCount:
           type: integer
           minimum: 0
+        lastSequence:
+          type: integer
+          format: int64
+          nullable: true
+        watchedSources:
+          type: array
+          nullable: true
+          items:
+            type: string
 
     LogEvent:
       type: object
@@ -702,6 +720,10 @@ components:
       properties:
         agentId:
           type: string
+        sequence:
+          type: integer
+          format: int64
+          nullable: true
         events:
           type: array
           minItems: 1

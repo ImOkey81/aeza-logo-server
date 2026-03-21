@@ -11,6 +11,7 @@ spring:
     open-in-view: false
 
 server:
+  address: 0.0.0.0
   port: 8087
 
 opensearch:
