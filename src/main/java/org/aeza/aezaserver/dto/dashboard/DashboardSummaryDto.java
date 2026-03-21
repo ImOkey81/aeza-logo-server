@@ -5,6 +5,9 @@ public record DashboardSummaryDto(
         long errors,
         long warnings,
         long hosts,
-        long services
+        long services,
+        long aggregatedEvents,
+        long sampledEvents,
+        long burstEvents
 ) {
 }

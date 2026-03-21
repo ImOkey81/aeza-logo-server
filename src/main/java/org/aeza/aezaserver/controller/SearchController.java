@@ -31,7 +31,7 @@ public class SearchController {
     }
 
     @GetMapping("/logs/search")
-    @Operation(summary = "Search logs", description = "Supports full-text search and filtering by host, service, level and time range.")
+    @Operation(summary = "Search logs", description = "Supports full-text search and filtering by host, service, level, agentId and agent-side metadata like fingerprint, aggregated, sampled and burstDetected.")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -46,27 +46,34 @@ public class SearchController {
                                                   "timestamp": "2026-03-21T11:33:50Z",
                                                   "level": "ERROR",
                                                   "message": "database failed 2",
-                                                  "host": "srv-1",
-                                                  "service": "backend",
+                                                  "host": "agent-vm-01",
+                                                  "service": "nginx",
                                                   "sourceType": "file",
-                                                  "sourcePath": "/var/log/app.log",
-                                                  "tags": ["prod"],
+                                                  "sourcePath": "/var/log/nginx/error.log",
+                                                  "tags": ["prod", "agent"],
                                                   "metadata": {
-                                                    "env": "prod"
+                                                    "fingerprint": "d5c98f0a8be1d4ac",
+                                                    "messageTemplate": "database failed <num>",
+                                                    "occurrences": 12,
+                                                    "aggregated": true,
+                                                    "burstDetected": true
                                                   },
-                                                  "agentId": "agent-1"
+                                                  "agentId": "agent-dev-01"
                                                 }
                                               ],
                                               "total": 1,
                                               "aggregations": {
                                                 "hosts": {
-                                                  "srv-1": 1
+                                                  "agent-vm-01": 1
                                                 },
                                                 "services": {
-                                                  "backend": 1
+                                                  "nginx": 1
                                                 },
                                                 "levels": {
                                                   "ERROR": 1
+                                                },
+                                                "fingerprints": {
+                                                  "d5c98f0a8be1d4ac": 1
                                                 }
                                               }
                                             }
@@ -80,12 +87,17 @@ public class SearchController {
             @RequestParam(required = false) String host,
             @RequestParam(required = false) String service,
             @RequestParam(required = false) String level,
+            @RequestParam(required = false) String agentId,
+            @RequestParam(required = false) String fingerprint,
+            @RequestParam(required = false) Boolean aggregated,
+            @RequestParam(required = false) Boolean sampled,
+            @RequestParam(required = false) Boolean burstDetected,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size
     ) {
-        return searchService.search(q, host, service, level, from, to, page, size);
+        return searchService.search(q, host, service, level, from, to, agentId, fingerprint, aggregated, sampled, burstDetected, page, size);
     }
 
     @GetMapping("/live/sse")
