@@ -1,6 +1,6 @@
 package org.aeza.aezaserver.integration;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.aeza.aezaserver.config.IntegrationConfig;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -14,12 +14,11 @@ public class TelegramClient {
     private final RestClient restClient;
 
     public TelegramClient(
-            @Value("${integration.telegram.bot-token:}") String botToken,
-            @Value("${integration.telegram.chat-id:}") String chatId,
+            IntegrationConfig.TelegramSettings telegramSettings,
             RestClient.Builder restClientBuilder
     ) {
-        this.botToken = botToken;
-        this.chatId = chatId;
+        this.botToken = telegramSettings.botToken();
+        this.chatId = telegramSettings.chatId();
         this.restClient = restClientBuilder.build();
     }
 

@@ -1,12 +1,10 @@
 package org.aeza.aezaserver.controller;
 
 import org.aeza.aezaserver.dto.search.SearchResponseDto;
-import org.aeza.aezaserver.service.AuthService;
 import org.aeza.aezaserver.service.LiveStreamService;
 import org.aeza.aezaserver.service.SearchService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,18 +16,15 @@ import java.time.Instant;
 @RequestMapping("/api/v1")
 public class SearchController {
     private final SearchService searchService;
-    private final AuthService authService;
     private final LiveStreamService liveStreamService;
 
-    public SearchController(SearchService searchService, AuthService authService, LiveStreamService liveStreamService) {
+    public SearchController(SearchService searchService, LiveStreamService liveStreamService) {
         this.searchService = searchService;
-        this.authService = authService;
         this.liveStreamService = liveStreamService;
     }
 
     @GetMapping("/logs/search")
     public SearchResponseDto search(
-            @RequestHeader(name = "Authorization", required = false) String authorization,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String host,
             @RequestParam(required = false) String service,
@@ -39,13 +34,11 @@ public class SearchController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size
     ) {
-        authService.requireAuth(authorization);
         return searchService.search(q, host, service, level, from, to, page, size);
     }
 
-    @GetMapping("/live/ws")
-    public SseEmitter live(@RequestHeader(name = "Authorization", required = false) String authorization) {
-        authService.requireAuth(authorization);
+    @GetMapping("/live/sse")
+    public SseEmitter live() {
         return liveStreamService.subscribe();
     }
 }

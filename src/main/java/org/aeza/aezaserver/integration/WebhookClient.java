@@ -1,6 +1,6 @@
 package org.aeza.aezaserver.integration;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.aeza.aezaserver.config.IntegrationConfig;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -12,8 +12,11 @@ public class WebhookClient {
     private final String webhookUrl;
     private final RestClient restClient;
 
-    public WebhookClient(@Value("${integration.webhook.url:}") String webhookUrl, RestClient.Builder restClientBuilder) {
-        this.webhookUrl = webhookUrl;
+    public WebhookClient(
+            IntegrationConfig.WebhookSettings webhookSettings,
+            RestClient.Builder restClientBuilder
+    ) {
+        this.webhookUrl = webhookSettings.url();
         this.restClient = restClientBuilder.build();
     }
 
