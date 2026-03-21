@@ -37,9 +37,9 @@ public class AgentsController {
                                     value = """
                                             [
                                               {
-                                                "agentId": "agent-1",
-                                                "host": "srv-1",
-                                                "status": "ONLINE",
+                                                "agentId": "agent-dev-01",
+                                                "host": "agent-vm-01",
+                                                "status": "online",
                                                 "lastSeen": "2026-03-21T11:24:32.636001841Z",
                                                 "bufferedCount": 0
                                               }
@@ -64,9 +64,9 @@ public class AgentsController {
                             examples = @ExampleObject(
                                     value = """
                                             {
-                                              "agentId": "agent-1",
-                                              "host": "srv-1",
-                                              "status": "ONLINE",
+                                              "agentId": "agent-dev-01",
+                                              "host": "agent-vm-01",
+                                              "status": "online",
                                               "lastSeen": "2026-03-21T11:24:32.636001841Z",
                                               "bufferedCount": 0
                                             }

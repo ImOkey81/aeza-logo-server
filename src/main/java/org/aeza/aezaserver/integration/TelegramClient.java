@@ -4,6 +4,7 @@ import org.aeza.aezaserver.config.IntegrationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -33,12 +34,13 @@ public class TelegramClient {
         }
         String url = "https://api.telegram.org/bot" + botToken + "/sendMessage";
         try {
-            restClient.post()
+            ResponseEntity<Void> response = restClient.post()
                     .uri(url)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(Map.of("chat_id", chatId, "text", message))
                     .retrieve()
                     .toBodilessEntity();
+            log.info("Telegram alert sent to chat {} with status {}", chatId, response.getStatusCode().value());
         } catch (RuntimeException ex) {
             log.error("Telegram alert send failed: {}", ex.getMessage());
         }

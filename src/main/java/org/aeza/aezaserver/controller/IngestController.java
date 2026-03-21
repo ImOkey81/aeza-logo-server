@@ -50,20 +50,21 @@ public class IngestController {
                     examples = @ExampleObject(
                             value = """
                                     {
-                                      "agentId": "agent-1",
+                                      "agentId": "agent-dev-01",
+                                      "sequence": 1774104589716,
                                       "events": [
                                         {
                                           "timestamp": "2026-03-21T11:40:00Z",
                                           "level": "ERROR",
                                           "message": "database timeout",
-                                          "host": "srv-1",
-                                          "service": "backend",
+                                          "host": "agent-vm-01",
+                                          "service": "nginx",
                                           "sourceType": "file",
-                                          "sourcePath": "/var/log/app.log",
-                                          "tags": ["prod", "db"],
+                                          "sourcePath": "/var/log/nginx/error.log",
+                                          "tags": ["prod", "agent"],
                                           "metadata": {
                                             "env": "prod",
-                                            "component": "jdbc"
+                                            "component": "collector"
                                           }
                                         }
                                       ]
@@ -84,6 +85,7 @@ public class IngestController {
                                               "status": "ok",
                                               "accepted": 1,
                                               "requestId": "27aa717b-688f-458c-954f-f8fa8d8cbd01"
+
                                             }
                                             """
                             )
@@ -104,10 +106,16 @@ public class IngestController {
                     examples = @ExampleObject(
                             value = """
                                     {
-                                      "agentId": "agent-1",
-                                      "host": "srv-1",
-                                      "status": "ONLINE",
-                                      "bufferedCount": 0
+                                      "agentId": "agent-dev-01",
+                                      "hostName": "agent-vm-01",
+                                      "hostIp": "194.113.106.38",
+                                      "status": "online",
+                                      "bufferedCount": 0,
+                                      "lastSequence": 1774104589716,
+                                      "watchedSources": [
+                                        "/var/log/nginx/error.log",
+                                        "/var/log/syslog"
+                                      ]
                                     }
                                     """
                     )
@@ -122,9 +130,9 @@ public class IngestController {
                             examples = @ExampleObject(
                                     value = """
                                             {
-                                              "agentId": "agent-1",
-                                              "host": "srv-1",
-                                              "status": "ONLINE",
+                                              "agentId": "agent-dev-01",
+                                              "host": "agent-vm-01",
+                                              "status": "online",
                                               "lastSeen": "2026-03-21T11:24:32.636001841Z",
                                               "bufferedCount": 0
                                             }
