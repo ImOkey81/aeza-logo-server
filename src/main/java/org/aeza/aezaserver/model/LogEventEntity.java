@@ -32,16 +32,16 @@ public class LogEventEntity {
     @Column(nullable = false)
     private String message;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, length = 2048)
     private String host;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, length = 2048)
     private String service;
 
-    @Column(name = "source_type", length = 128)
+    @Column(name = "source_type", length = 255)
     private String sourceType;
 
-    @Column(name = "source_path", length = 1024)
+    @Column(name = "source_path", length = 4096)
     private String sourcePath;
 
     @Column(columnDefinition = "TEXT")
@@ -50,6 +50,6 @@ public class LogEventEntity {
     @Column(columnDefinition = "TEXT")
     private String metadata;
 
-    @Column(name = "agent_id", nullable = false, length = 128)
+    @Column(name = "agent_id", nullable = false, length = 255)
     private String agentId;
 }
