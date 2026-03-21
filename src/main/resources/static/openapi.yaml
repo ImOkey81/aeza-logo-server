@@ -103,6 +103,94 @@ paths:
                   levels:
                     ERROR: 1
 
+  /api/v1/live/sse:
+    get:
+      summary: Open SSE stream
+      description: |
+        Opens a server-sent events stream for realtime frontend updates.
+        The server sends events with names `log_event`, `agent_status` and `alert_triggered`.
+        The event payload is wrapped into a common envelope with fields `type` and `payload`.
+      responses:
+        "200":
+          description: SSE stream opened
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              examples:
+                log_event:
+                  summary: log_event SSE message
+                  value: |
+                    event: log_event
+                    data: {"type":"log_event","payload":{"timestamp":"2026-03-21T11:33:50Z","level":"ERROR","message":"database timeout","host":"agent-vm-01","service":"nginx","sourceType":"file","sourcePath":"/var/log/nginx/error.log","tags":["prod","agent"],"metadata":{"env":"prod"},"agentId":"agent-dev-01"}}
+                agent_status:
+                  summary: agent_status SSE message
+                  value: |
+                    event: agent_status
+                    data: {"type":"agent_status","payload":{"agentId":"agent-dev-01","host":"agent-vm-01","status":"online","lastSeen":"2026-03-21T11:24:32.636001841Z","bufferedCount":0}}
+                alert_triggered:
+                  summary: alert_triggered SSE message
+                  value: |
+                    event: alert_triggered
+                    data: {"type":"alert_triggered","payload":{"id":1,"ruleId":2,"ruleName":"Errors spike","triggeredAt":"2026-03-21T11:35:00Z","message":"Threshold exceeded","channel":"telegram","value":18,"threshold":10}}
+
+  /api/v1/live/ws:
+    get:
+      summary: Open WebSocket stream
+      description: |
+        Upgrades the connection to WebSocket and streams realtime events for the frontend.
+        Connect to `ws://<host>:8087/api/v1/live/ws`.
+        Messages are JSON envelopes with fields `type` and `payload`.
+      responses:
+        "101":
+          description: Switching Protocols
+        "200":
+          description: Message envelope examples after a successful websocket upgrade
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveEventEnvelope"
+              examples:
+                log_event:
+                  summary: log_event websocket message
+                  value:
+                    type: "log_event"
+                    payload:
+                      timestamp: "2026-03-21T11:33:50Z"
+                      level: "ERROR"
+                      message: "database timeout"
+                      host: "agent-vm-01"
+                      service: "nginx"
+                      sourceType: "file"
+                      sourcePath: "/var/log/nginx/error.log"
+                      tags: ["prod", "agent"]
+                      metadata:
+                        env: "prod"
+                      agentId: "agent-dev-01"
+                agent_status:
+                  summary: agent_status websocket message
+                  value:
+                    type: "agent_status"
+                    payload:
+                      agentId: "agent-dev-01"
+                      host: "agent-vm-01"
+                      status: "online"
+                      lastSeen: "2026-03-21T11:24:32.636001841Z"
+                      bufferedCount: 0
+                alert_triggered:
+                  summary: alert_triggered websocket message
+                  value:
+                    type: "alert_triggered"
+                    payload:
+                      id: 1
+                      ruleId: 2
+                      ruleName: "Errors spike"
+                      triggeredAt: "2026-03-21T11:35:00Z"
+                      message: "Threshold exceeded"
+                      channel: "telegram"
+                      value: 18
+                      threshold: 10
+
   /api/v1/dashboard/summary:
     get:
       summary: Get summary metrics
@@ -248,9 +336,9 @@ paths:
                 items:
                   $ref: "#/components/schemas/AgentStatus"
               example:
-                - agentId: "agent-1"
-                  host: "srv-1"
-                  status: "ONLINE"
+                - agentId: "agent-dev-01"
+                  host: "agent-vm-01"
+                  status: "online"
                   lastSeen: "2026-03-21T11:24:32.636001841Z"
                   bufferedCount: 0
 
@@ -271,9 +359,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/AgentStatus"
               example:
-                agentId: "agent-1"
-                host: "srv-1"
-                status: "ONLINE"
+                agentId: "agent-dev-01"
+                host: "agent-vm-01"
+                status: "online"
                 lastSeen: "2026-03-21T11:24:32.636001841Z"
                 bufferedCount: 0
         "404":
@@ -292,7 +380,7 @@ paths:
   /api/v1/agents/heartbeat:
     post:
       summary: Update agent heartbeat
-      description: Agent endpoint for updating current status and buffered count.
+      description: Agent endpoint for updating current status, buffered count and watched sources.
       requestBody:
         required: true
         content:
@@ -300,12 +388,12 @@ paths:
             schema:
               $ref: "#/components/schemas/HeartbeatRequest"
             example:
-              agentId: "agent-1"
-              hostName: "srv-1"
+              agentId: "agent-dev-01"
+              hostName: "agent-vm-01"
               hostIp: "194.113.106.38"
-              status: "ONLINE"
+              status: "online"
               bufferedCount: 0
-              lastSequence: 1774097148813
+              lastSequence: 1774104589716
               watchedSources:
                 - "/var/log/nginx/error.log"
                 - "/var/log/syslog"
@@ -317,9 +405,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/AgentStatus"
               example:
-                agentId: "agent-1"
-                host: "srv-1"
-                status: "ONLINE"
+                agentId: "agent-dev-01"
+                host: "agent-vm-01"
+                status: "online"
                 lastSeen: "2026-03-21T11:24:32.636001841Z"
                 bufferedCount: 0
         "400":
@@ -346,20 +434,20 @@ paths:
             schema:
               $ref: "#/components/schemas/IngestBatchRequest"
             example:
-              agentId: "agent-1"
-              sequence: 1774097148813
+              agentId: "agent-dev-01"
+              sequence: 1774104589716
               events:
                 - timestamp: "2026-03-21T11:40:00Z"
                   level: "ERROR"
                   message: "database timeout"
-                  host: "srv-1"
-                  service: "backend"
+                  host: "agent-vm-01"
+                  service: "nginx"
                   sourceType: "file"
-                  sourcePath: "/var/log/app.log"
-                  tags: ["prod", "db"]
+                  sourcePath: "/var/log/nginx/error.log"
+                  tags: ["prod", "agent"]
                   metadata:
                     env: "prod"
-                    component: "jdbc"
+                    component: "collector"
       responses:
         "200":
           description: Ingest accepted
@@ -652,6 +740,8 @@ components:
         - hostName
         - status
         - bufferedCount
+        - lastSequence
+        - watchedSources
       properties:
         agentId:
           type: string
@@ -662,16 +752,17 @@ components:
           nullable: true
         status:
           type: string
+          enum:
+            - online
+            - degraded
         bufferedCount:
           type: integer
           minimum: 0
         lastSequence:
           type: integer
           format: int64
-          nullable: true
         watchedSources:
           type: array
-          nullable: true
           items:
             type: string
 
@@ -716,6 +807,7 @@ components:
       type: object
       required:
         - agentId
+        - sequence
         - events
       properties:
         agentId:
@@ -723,7 +815,6 @@ components:
         sequence:
           type: integer
           format: int64
-          nullable: true
         events:
           type: array
           minItems: 1
@@ -739,6 +830,22 @@ components:
           type: integer
         requestId:
           type: string
+
+    LiveEventEnvelope:
+      type: object
+      required:
+        - type
+        - payload
+      properties:
+        type:
+          type: string
+          enum:
+            - log_event
+            - agent_status
+            - alert_triggered
+        payload:
+          type: object
+          additionalProperties: true
 
     AlertRuleCreateRequest:
       type: object
