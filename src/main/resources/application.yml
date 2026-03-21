@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: aeza-server
+  datasource:
+    url: jdbc:postgresql://localhost:5432/logovizor
+    username: postgres
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+server:
+  address: 0.0.0.0
+  port: 8087
+
+cors:
+  allowed-origin-patterns:
+    - "*"
+
+opensearch:
+  enabled: true
+  url: http://localhost:9200
+  username: ""
+  password: ""
+  index-prefix: log-events
+
+alert:
+  scheduler:
+    interval-ms: 30000
+
+integration:
+  telegram:
+    bot-token: ""
+    chat-id: ""
+  webhook:
+    url: ""
+
+springdoc:
+  swagger-ui:
+    path: /docs
+    url: /openapi.yaml
+    disable-swagger-default-url: true
+  api-docs:
+    path: /docs/openapi
