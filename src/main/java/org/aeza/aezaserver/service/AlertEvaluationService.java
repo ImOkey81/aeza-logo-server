@@ -7,6 +7,8 @@ import org.aeza.aezaserver.model.AlertEvent;
 import org.aeza.aezaserver.model.AlertRule;
 import org.aeza.aezaserver.repository.AlertEventRepository;
 import org.aeza.aezaserver.repository.AlertRuleRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +18,8 @@ import java.util.Locale;
 
 @Service
 public class AlertEvaluationService {
+    private static final Logger log = LoggerFactory.getLogger(AlertEvaluationService.class);
+
     private final AlertRuleRepository alertRuleRepository;
     private final AlertEventRepository alertEventRepository;
     private final DashboardService dashboardService;
@@ -45,6 +49,7 @@ public class AlertEvaluationService {
     @Transactional
     public void evaluateAll() {
         List<AlertRule> rules = alertRuleRepository.findByEnabledTrueOrderByIdAsc();
+        log.info("Evaluating {} enabled alert rules", rules.size());
         for (AlertRule rule : rules) {
             evaluateRule(rule);
         }
@@ -53,6 +58,7 @@ public class AlertEvaluationService {
     private void evaluateRule(AlertRule rule) {
         Instant now = Instant.now();
         if (rule.getLastTriggeredAt() != null && now.isBefore(rule.getLastTriggeredAt().plusSeconds(rule.getCooldownSeconds()))) {
+            log.info("Skipping rule '{}' because cooldown is active", rule.getName());
             return;
         }
 
@@ -71,9 +77,19 @@ public class AlertEvaluationService {
                 triggered = observed > rule.getThreshold();
             }
             default -> {
+                log.warn("Skipping rule '{}' with unsupported conditionType '{}'", rule.getName(), rule.getConditionType());
                 return;
             }
         }
+
+        log.info(
+                "Rule '{}' evaluated: observed={}, threshold={}, triggered={}, channel={}",
+                rule.getName(),
+                observed,
+                rule.getThreshold(),
+                triggered,
+                rule.getChannel()
+        );
 
         if (!triggered) {
             return;
@@ -97,6 +113,7 @@ public class AlertEvaluationService {
         event.setValue(observed);
         event.setThreshold(rule.getThreshold());
         AlertEvent savedEvent = alertEventRepository.save(event);
+        log.info("Rule '{}' triggered, alert event id={}", rule.getName(), savedEvent.getId());
 
         rule.setLastTriggeredAt(now);
         rule.setUpdatedAt(Instant.now());
