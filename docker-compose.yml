@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: aeza-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: logovizor
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d logovizor"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  opensearch:
+    image: opensearchproject/opensearch:2.19.1
+    container_name: aeza-opensearch
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: "true"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: "StrongPass_12345"
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aeza-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8087
+      JAVA_OPTS: -Xms256m -Xmx512m
+    ports:
+      - "8087:8087"
+
+volumes:
+  pg_data:
+  opensearch_data:

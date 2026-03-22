@@ -11,6 +11,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Service
 public class LiveStreamService {
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+    private final LiveWebSocketHandler liveWebSocketHandler;
+
+    public LiveStreamService(LiveWebSocketHandler liveWebSocketHandler) {
+        this.liveWebSocketHandler = liveWebSocketHandler;
+    }
 
     public SseEmitter subscribe() {
         SseEmitter emitter = new SseEmitter(0L);
@@ -30,5 +35,6 @@ public class LiveStreamService {
                 emitters.remove(emitter);
             }
         }
+        liveWebSocketHandler.broadcast(type, payload);
     }
 }

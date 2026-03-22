@@ -1,12 +1,34 @@
 package org.aeza.aezaserver.dto.ingest;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+import java.util.List;
 
 public record HeartbeatRequest(
-        @NotBlank String agentId,
-        @NotBlank String host,
-        @NotBlank String status,
-        @Min(0) int bufferedCount
+        @NotBlank
+        @Size(max = ValidationLimits.AGENT_ID_MAX)
+        String agentId,
+
+        @JsonProperty("hostName")
+        @NotBlank
+        @Size(max = ValidationLimits.HOST_MAX)
+        String host,
+
+        @Size(max = ValidationLimits.HOST_MAX)
+        String hostIp,
+
+        @NotBlank
+        @Size(max = 32)
+        String status,
+
+        @Min(0)
+        int bufferedCount,
+
+        Long lastSequence,
+
+        List<@Size(max = ValidationLimits.SOURCE_PATH_MAX) String> watchedSources
 ) {
 }

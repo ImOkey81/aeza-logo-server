@@ -8,6 +8,21 @@ public record SearchCriteria(
         String service,
         String level,
         Instant from,
-        Instant to
+        Instant to,
+        String agentId,
+        String fingerprint,
+        Boolean aggregated,
+        Boolean sampled,
+        Boolean burstDetected
 ) {
+    public SearchCriteria(
+            String q,
+            String host,
+            String service,
+            String level,
+            Instant from,
+            Instant to
+    ) {
+        this(q, host, service, level, from, to, null, null, null, null, null);
+    }
 }

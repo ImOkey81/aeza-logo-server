@@ -8,7 +8,7 @@ public record AlertRuleCreateRequest(
         boolean enabled,
         @NotBlank String conditionType,
         String query,
-        @Min(1) long threshold,
+        @Min(0) long threshold,
         @Min(10) long windowSeconds,
         @Min(0) long cooldownSeconds,
         @NotBlank String channel,
