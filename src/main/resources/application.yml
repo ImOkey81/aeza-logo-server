@@ -4,7 +4,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/logovizor
     username: postgres
-    password: postgres
+    password: ""
   jpa:
     hibernate:
       ddl-auto: update
@@ -31,8 +31,8 @@ alert:
 
 integration:
   telegram:
-    bot-token: 8746703923:AAGGwrf0o3Mn8XOzf3thQqfd8U4cqwkPwr0
-    chat-id: -1003869066185
+    bot-token: ""
+    chat-id: ""
   webhook:
     url: ""
 
