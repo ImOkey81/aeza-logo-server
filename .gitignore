@@ -3,5 +3,9 @@
 build/
 .gradle/
 *.log
+# Local Spring configs
 src/main/resources/application.yml
 src/main/resources/application-*.yml
+src/main/resources/application.local.yml
+src/main/resources/application.override.yml
+src/main/resources/application.secrets.yml
