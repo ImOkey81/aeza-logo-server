@@ -72,7 +72,7 @@ public class AlertEvaluationService {
                 triggered = observed > rule.getThreshold();
             }
             case "error_rate_gt" -> {
-                DashboardSummaryDto summary = dashboardService.summary(from, now);
+                DashboardSummaryDto summary = dashboardService.summary(from, now, null);
                 observed = summary.totalLogs() == 0 ? 0 : Math.round((summary.errors() * 100.0) / summary.totalLogs());
                 triggered = observed > rule.getThreshold();
             }

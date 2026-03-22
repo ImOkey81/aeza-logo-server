@@ -12,6 +12,9 @@ public record HeartbeatRequest(
         @Size(max = ValidationLimits.AGENT_ID_MAX)
         String agentId,
 
+        @Size(max = 255)
+        String agentName,
+
         @JsonProperty("hostName")
         @NotBlank
         @Size(max = ValidationLimits.HOST_MAX)

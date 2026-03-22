@@ -107,6 +107,7 @@ public class IngestController {
                             value = """
                                     {
                                       "agentId": "agent-dev-01",
+                                      "agentName": "Main dev agent",
                                       "hostName": "agent-vm-01",
                                       "hostIp": "194.113.106.38",
                                       "status": "online",
@@ -131,10 +132,14 @@ public class IngestController {
                                     value = """
                                             {
                                               "agentId": "agent-dev-01",
+                                              "name": "Main dev agent",
                                               "host": "agent-vm-01",
+                                              "hostIp": "194.113.106.38",
                                               "status": "online",
                                               "lastSeen": "2026-03-21T11:24:32.636001841Z",
-                                              "bufferedCount": 0
+                                              "bufferedCount": 0,
+                                              "groupId": 1,
+                                              "groupName": "production"
                                             }
                                             """
                             )

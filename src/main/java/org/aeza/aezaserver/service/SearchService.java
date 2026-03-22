@@ -10,9 +10,11 @@ import java.time.Instant;
 @Service
 public class SearchService {
     private final OpenSearchClientAdapter openSearchClientAdapter;
+    private final AgentGroupService agentGroupService;
 
-    public SearchService(OpenSearchClientAdapter openSearchClientAdapter) {
+    public SearchService(OpenSearchClientAdapter openSearchClientAdapter, AgentGroupService agentGroupService) {
         this.openSearchClientAdapter = openSearchClientAdapter;
+        this.agentGroupService = agentGroupService;
     }
 
     public SearchResponseDto search(
@@ -25,7 +27,7 @@ public class SearchService {
             int page,
             int size
     ) {
-        return search(q, host, service, level, from, to, null, null, null, null, null, page, size);
+        return search(q, host, service, level, from, to, null, null, null, null, null, null, page, size);
     }
 
     public SearchResponseDto search(
@@ -36,6 +38,7 @@ public class SearchService {
             Instant from,
             Instant to,
             String agentId,
+            Long groupId,
             String fingerprint,
             Boolean aggregated,
             Boolean sampled,
@@ -43,8 +46,23 @@ public class SearchService {
             int page,
             int size
     ) {
+        SearchCriteria criteria = new SearchCriteria(
+                q,
+                host,
+                service,
+                level,
+                from,
+                to,
+                agentId,
+                groupId,
+                agentGroupService.resolveAgentIds(groupId),
+                fingerprint,
+                aggregated,
+                sampled,
+                burstDetected
+        );
         OpenSearchClientAdapter.SearchResult result = openSearchClientAdapter.search(
-                new SearchCriteria(q, host, service, level, from, to, agentId, fingerprint, aggregated, sampled, burstDetected),
+                criteria,
                 page,
                 size
         );

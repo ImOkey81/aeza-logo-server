@@ -426,6 +426,10 @@ public class OpenSearchClientAdapter {
     }
 
     private List<LogDocument> applyFilters(SearchCriteria criteria) {
+        if (criteria.agentIds() != null && criteria.agentIds().isEmpty()) {
+            return List.of();
+        }
+
         return new ArrayList<>(logEventRepository.findAll()).stream()
                 .map(this::toDocument)
                 .filter(doc -> criteria.from() == null || !doc.timestamp().isBefore(criteria.from()))
@@ -434,6 +438,7 @@ public class OpenSearchClientAdapter {
                 .filter(doc -> matches(doc.service(), criteria.service()))
                 .filter(doc -> matches(normalize(doc.level()), normalize(criteria.level())))
                 .filter(doc -> matches(doc.agentId(), criteria.agentId()))
+                .filter(doc -> criteria.agentIds() == null || criteria.agentIds().contains(doc.agentId()))
                 .filter(doc -> matches(metadataString(doc.metadata(), "fingerprint"), criteria.fingerprint()))
                 .filter(doc -> matchesMetadataBoolean(doc.metadata(), "aggregated", criteria.aggregated()))
                 .filter(doc -> matchesMetadataBoolean(doc.metadata(), "sampled", criteria.sampled()))
@@ -470,6 +475,10 @@ public class OpenSearchClientAdapter {
     }
 
     private Map<String, Object> buildQuery(SearchCriteria criteria) {
+        if (criteria.agentIds() != null && criteria.agentIds().isEmpty()) {
+            return Map.of("match_none", Map.of());
+        }
+
         List<Map<String, Object>> filters = new ArrayList<>();
 
         if (criteria.from() != null || criteria.to() != null) {
@@ -497,6 +506,10 @@ public class OpenSearchClientAdapter {
 
         if (hasText(criteria.agentId())) {
             filters.add(Map.of("term", Map.of("agentId.keyword", criteria.agentId())));
+        }
+
+        if (criteria.agentIds() != null) {
+            filters.add(Map.of("terms", Map.of("agentId.keyword", criteria.agentIds())));
         }
 
         if (hasText(criteria.fingerprint())) {

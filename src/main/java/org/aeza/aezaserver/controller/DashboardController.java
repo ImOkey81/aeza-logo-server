@@ -34,18 +34,20 @@ public class DashboardController {
     @Operation(summary = "Get summary metrics", description = "Returns totals for logs, errors, warnings, hosts, services and agent-side aggregation markers.")
     public DashboardSummaryDto summary(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @RequestParam(required = false) Long groupId
     ) {
-        return dashboardService.summary(from, to);
+        return dashboardService.summary(from, to, groupId);
     }
 
     @GetMapping("/timeseries")
     @Operation(summary = "Get timeseries", description = "Returns time buckets for errors and warnings using observed occurrences from agent metadata.")
     public DashboardTimeseriesDto timeseries(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @RequestParam(required = false) Long groupId
     ) {
-        return dashboardService.timeseries(from, to);
+        return dashboardService.timeseries(from, to, groupId);
     }
 
     @GetMapping("/top-hosts")
@@ -78,9 +80,10 @@ public class DashboardController {
     public DashboardTopHostsDto topHosts(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @RequestParam(required = false) Long groupId,
             @RequestParam(defaultValue = "10") int limit
     ) {
-        return dashboardService.topHosts(from, to, limit);
+        return dashboardService.topHosts(from, to, groupId, limit);
     }
 
     @GetMapping("/top-services")
@@ -113,9 +116,10 @@ public class DashboardController {
     public DashboardTopServicesDto topServices(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @RequestParam(required = false) Long groupId,
             @RequestParam(defaultValue = "10") int limit
     ) {
-        return dashboardService.topServices(from, to, limit);
+        return dashboardService.topServices(from, to, groupId, limit);
     }
 
     @GetMapping("/top-patterns")
@@ -147,8 +151,9 @@ public class DashboardController {
     public DashboardTopPatternsDto topPatterns(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @RequestParam(required = false) Long groupId,
             @RequestParam(defaultValue = "10") int limit
     ) {
-        return dashboardService.topPatterns(from, to, limit);
+        return dashboardService.topPatterns(from, to, groupId, limit);
     }
 }

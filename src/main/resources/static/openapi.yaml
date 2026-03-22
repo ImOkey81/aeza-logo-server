@@ -29,7 +29,7 @@ paths:
   /api/v1/logs/search:
     get:
       summary: Search logs
-      description: Returns logs with total count and aggregations for frontend filters, including agent-side metadata.
+      description: Returns logs with total count and aggregations for frontend filters, including agent-side metadata and agent group filtering.
       parameters:
         - in: query
           name: q
@@ -57,6 +57,12 @@ paths:
           required: false
           schema:
             type: string
+        - in: query
+          name: groupId
+          required: false
+          schema:
+            type: integer
+            format: int64
         - in: query
           name: fingerprint
           required: false
@@ -89,6 +95,12 @@ paths:
           schema:
             type: string
             format: date-time
+        - in: query
+          name: groupId
+          required: false
+          schema:
+            type: integer
+            format: int64
         - in: query
           name: page
           required: false
@@ -240,6 +252,12 @@ paths:
           schema:
             type: string
             format: date-time
+        - in: query
+          name: groupId
+          required: false
+          schema:
+            type: integer
+            format: int64
       responses:
         "200":
           description: Summary response
@@ -304,6 +322,12 @@ paths:
             type: string
             format: date-time
         - in: query
+          name: groupId
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - in: query
           name: limit
           required: false
           schema:
@@ -340,6 +364,12 @@ paths:
           schema:
             type: string
             format: date-time
+        - in: query
+          name: groupId
+          required: false
+          schema:
+            type: integer
+            format: int64
         - in: query
           name: limit
           required: false
@@ -378,6 +408,12 @@ paths:
             type: string
             format: date-time
         - in: query
+          name: groupId
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - in: query
           name: limit
           required: false
           schema:
@@ -401,7 +437,14 @@ paths:
   /api/v1/agents:
     get:
       summary: List agents
-      description: Returns current list of agents for frontend.
+      description: Returns current list of agents for frontend. Can be filtered by groupId.
+      parameters:
+        - in: query
+          name: groupId
+          required: false
+          schema:
+            type: integer
+            format: int64
       responses:
         "200":
           description: Agent list
@@ -413,10 +456,37 @@ paths:
                   $ref: "#/components/schemas/AgentStatus"
               example:
                 - agentId: "agent-dev-01"
+                  name: "Main dev agent"
                   host: "agent-vm-01"
+                  hostIp: "158.160.205.79"
                   status: "online"
                   lastSeen: "2026-03-21T11:24:32.636001841Z"
                   bufferedCount: 0
+                  groupId: 1
+                  groupName: "production"
+    post:
+      summary: Create agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentCreateRequest"
+            example:
+              agentId: "agent-prod-02"
+              name: "Prod node 02"
+              host: "prod-node-02"
+              hostIp: "10.0.0.42"
+              status: "offline"
+              bufferedCount: 0
+              groupId: 1
+      responses:
+        "200":
+          description: Created agent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentStatus"
 
   /api/v1/agents/{id}:
     get:
@@ -436,10 +506,14 @@ paths:
                 $ref: "#/components/schemas/AgentStatus"
               example:
                 agentId: "agent-dev-01"
+                name: "Main dev agent"
                 host: "agent-vm-01"
+                hostIp: "158.160.205.79"
                 status: "online"
                 lastSeen: "2026-03-21T11:24:32.636001841Z"
                 bufferedCount: 0
+                groupId: 1
+                groupName: "production"
         "404":
           description: Agent not found
           content:
@@ -452,6 +526,124 @@ paths:
                 error: "Not Found"
                 message: "agent not found"
                 path: "/api/v1/agents/agent-404"
+    put:
+      summary: Update agent
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentUpdateRequest"
+            example:
+              name: "Prod node 02 renamed"
+              status: "online"
+              groupId: 2
+      responses:
+        "200":
+          description: Updated agent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentStatus"
+
+  /api/v1/agent-groups:
+    get:
+      summary: List agent groups
+      responses:
+        "200":
+          description: Agent groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentGroup"
+    post:
+      summary: Create agent group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentGroupCreateRequest"
+            example:
+              name: "production"
+              description: "Main production servers"
+              agentIds:
+                - "agent-prod-01"
+                - "agent-prod-02"
+      responses:
+        "200":
+          description: Created agent group
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentGroup"
+
+  /api/v1/agent-groups/{id}:
+    get:
+      summary: Get agent group details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Agent group details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentGroup"
+    put:
+      summary: Update agent group
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentGroupUpdateRequest"
+            example:
+              name: "production-core"
+              description: "Core production nodes"
+              agentIds:
+                - "agent-prod-01"
+                - "agent-prod-02"
+                - "agent-prod-03"
+      responses:
+        "200":
+          description: Updated agent group
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentGroup"
+    delete:
+      summary: Delete agent group
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: Group deleted
 
   /api/v1/agents/heartbeat:
     post:
@@ -465,6 +657,7 @@ paths:
               $ref: "#/components/schemas/HeartbeatRequest"
             example:
               agentId: "agent-dev-01"
+              agentName: "Main dev agent"
               hostName: "agent-vm-01"
               hostIp: "194.113.106.38"
               status: "online"
@@ -482,10 +675,14 @@ paths:
                 $ref: "#/components/schemas/AgentStatus"
               example:
                 agentId: "agent-dev-01"
+                name: "Main dev agent"
                 host: "agent-vm-01"
+                hostIp: "194.113.106.38"
                 status: "online"
                 lastSeen: "2026-03-21T11:24:32.636001841Z"
                 bufferedCount: 0
+                groupId: 1
+                groupName: "production"
         "400":
           description: Validation failed
           content:
@@ -831,8 +1028,13 @@ components:
       properties:
         agentId:
           type: string
+        name:
+          type: string
         host:
           type: string
+        hostIp:
+          type: string
+          nullable: true
         status:
           type: string
         lastSeen:
@@ -840,6 +1042,113 @@ components:
           format: date-time
         bufferedCount:
           type: integer
+        groupId:
+          type: integer
+          format: int64
+          nullable: true
+        groupName:
+          type: string
+          nullable: true
+
+    AgentCreateRequest:
+      type: object
+      required:
+        - agentId
+        - host
+      properties:
+        agentId:
+          type: string
+        name:
+          type: string
+        host:
+          type: string
+        hostIp:
+          type: string
+          nullable: true
+        status:
+          type: string
+        bufferedCount:
+          type: integer
+          minimum: 0
+        groupId:
+          type: integer
+          format: int64
+          nullable: true
+
+    AgentUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        host:
+          type: string
+        hostIp:
+          type: string
+          nullable: true
+        status:
+          type: string
+        bufferedCount:
+          type: integer
+          minimum: 0
+        groupId:
+          type: integer
+          format: int64
+          nullable: true
+        clearGroup:
+          type: boolean
+
+    AgentGroupCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        agentIds:
+          type: array
+          items:
+            type: string
+
+    AgentGroupUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        agentIds:
+          type: array
+          items:
+            type: string
+
+    AgentGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        agentCount:
+          type: integer
+          format: int64
+        agents:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentStatus"
 
     HeartbeatRequest:
       type: object
@@ -848,10 +1157,10 @@ components:
         - hostName
         - status
         - bufferedCount
-        - lastSequence
-        - watchedSources
       properties:
         agentId:
+          type: string
+        agentName:
           type: string
         hostName:
           type: string

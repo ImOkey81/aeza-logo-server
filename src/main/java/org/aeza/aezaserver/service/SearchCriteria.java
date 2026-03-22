@@ -1,6 +1,7 @@
 package org.aeza.aezaserver.service;
 
 import java.time.Instant;
+import java.util.List;
 
 public record SearchCriteria(
         String q,
@@ -10,6 +11,8 @@ public record SearchCriteria(
         Instant from,
         Instant to,
         String agentId,
+        Long groupId,
+        List<String> agentIds,
         String fingerprint,
         Boolean aggregated,
         Boolean sampled,
@@ -23,6 +26,6 @@ public record SearchCriteria(
             Instant from,
             Instant to
     ) {
-        this(q, host, service, level, from, to, null, null, null, null, null);
+        this(q, host, service, level, from, to, null, null, null, null, null, null, null);
     }
 }
