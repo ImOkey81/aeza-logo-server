@@ -17,4 +17,12 @@ public interface AgentRepository extends JpaRepository<Agent, String> {
 
     @Query("select a.agentId from Agent a where a.group.id = :groupId order by a.agentId")
     List<String> findAgentIdsByGroupId(@Param("groupId") Long groupId);
+
+    @Query("""
+            select a.agentId
+            from Agent a
+            where upper(a.displayName) = upper(:agentName) or upper(a.agentId) = upper(:agentName)
+            order by a.agentId
+            """)
+    List<String> findAgentIdsByAgentName(@Param("agentName") String agentName);
 }

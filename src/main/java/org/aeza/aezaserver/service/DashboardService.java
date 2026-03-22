@@ -94,6 +94,7 @@ public class DashboardService {
                 from,
                 to,
                 null,
+                null,
                 groupId,
                 agentGroupService.resolveAgentIds(groupId),
                 null,

@@ -11,6 +11,7 @@ public record SearchCriteria(
         Instant from,
         Instant to,
         String agentId,
+        String agentName,
         Long groupId,
         List<String> agentIds,
         String fingerprint,
@@ -26,6 +27,6 @@ public record SearchCriteria(
             Instant from,
             Instant to
     ) {
-        this(q, host, service, level, from, to, null, null, null, null, null, null, null);
+        this(q, host, service, level, from, to, null, null, null, null, null, null, null, null);
     }
 }

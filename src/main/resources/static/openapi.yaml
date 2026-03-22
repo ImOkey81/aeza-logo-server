@@ -29,7 +29,7 @@ paths:
   /api/v1/logs/search:
     get:
       summary: Search logs
-      description: Returns logs with total count and aggregations for frontend filters, including agent-side metadata and agent group filtering.
+      description: Returns logs with total count and aggregations for frontend filters, including agent-side metadata, agent name and agent group filtering.
       parameters:
         - in: query
           name: q
@@ -54,6 +54,11 @@ paths:
             type: string
         - in: query
           name: agentId
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: agentName
           required: false
           schema:
             type: string
@@ -95,12 +100,6 @@ paths:
           schema:
             type: string
             format: date-time
-        - in: query
-          name: groupId
-          required: false
-          schema:
-            type: integer
-            format: int64
         - in: query
           name: page
           required: false
@@ -291,6 +290,12 @@ paths:
           schema:
             type: string
             format: date-time
+        - in: query
+          name: groupId
+          required: false
+          schema:
+            type: integer
+            format: int64
       responses:
         "200":
           description: Timeseries response

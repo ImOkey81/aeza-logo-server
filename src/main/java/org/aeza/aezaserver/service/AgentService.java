@@ -75,6 +75,14 @@ public class AgentService {
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "agent not found"));
     }
 
+    @Transactional(readOnly = true)
+    public List<String> resolveAgentIdsByName(String agentName) {
+        if (!hasText(agentName)) {
+            return null;
+        }
+        return agentRepository.findAgentIdsByAgentName(agentName.trim());
+    }
+
     @Transactional
     public AgentStatusDto createAgent(AgentCreateRequest request) {
         if (agentRepository.existsById(request.agentId())) {

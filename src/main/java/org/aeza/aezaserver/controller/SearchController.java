@@ -31,7 +31,7 @@ public class SearchController {
     }
 
     @GetMapping("/logs/search")
-    @Operation(summary = "Search logs", description = "Supports full-text search and filtering by host, service, level, agentId, groupId and agent-side metadata like fingerprint, aggregated, sampled and burstDetected.")
+    @Operation(summary = "Search logs", description = "Supports full-text search and filtering by host, service, level, agentId, agentName, groupId and agent-side metadata like fingerprint, aggregated, sampled and burstDetected.")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -88,6 +88,7 @@ public class SearchController {
             @RequestParam(required = false) String service,
             @RequestParam(required = false) String level,
             @RequestParam(required = false) String agentId,
+            @RequestParam(required = false) String agentName,
             @RequestParam(required = false) Long groupId,
             @RequestParam(required = false) String fingerprint,
             @RequestParam(required = false) Boolean aggregated,
@@ -98,7 +99,7 @@ public class SearchController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size
     ) {
-        return searchService.search(q, host, service, level, from, to, agentId, groupId, fingerprint, aggregated, sampled, burstDetected, page, size);
+        return searchService.search(q, host, service, level, from, to, agentId, agentName, groupId, fingerprint, aggregated, sampled, burstDetected, page, size);
     }
 
     @GetMapping("/live/sse")
