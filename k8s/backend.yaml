@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aeza-backend
+  namespace: logovizor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aeza-backend
+  template:
+    metadata:
+      labels:
+        app: aeza-backend
+    spec:
+      containers:
+        - name: aeza-backend
+          image: ghcr.io/ImOkey81/aeza-logo-server:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8087
+          envFrom:
+            - configMapRef:
+                name: aeza-backend-config
+            - secretRef:
+                name: aeza-backend-secret
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8087
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8087
+            initialDelaySeconds: 40
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aeza-backend
+  namespace: logovizor
+spec:
+  selector:
+    app: aeza-backend
+  ports:
+    - name: http
+      port: 8087
+      targetPort: 8087
+  type: ClusterIP

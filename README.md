@@ -126,6 +126,54 @@ Stop and remove volumes:
 docker compose down -v
 ```
 
+## Kubernetes
+
+The repository now includes Kubernetes manifests in `k8s/`.
+
+Apply everything:
+
+```bash
+kubectl apply -k k8s
+```
+
+Check status:
+
+```bash
+kubectl get all -n logovizor
+kubectl get pvc -n logovizor
+```
+
+Open the backend locally:
+
+```bash
+kubectl port-forward svc/aeza-backend 8087:8087 -n logovizor
+curl http://127.0.0.1:8087/api/v1/health
+```
+
+Before applying:
+
+- update `k8s/secret.yaml` with real passwords and tokens
+- update the backend image in `k8s/backend.yaml` to the image published by your CI/CD
+- ensure your cluster has a default `StorageClass` for PVC provisioning
+
+## GitHub Actions CI/CD
+
+The workflow is stored at `.github/workflows/ci-cd.yml`.
+
+Pipeline behavior:
+
+- runs tests with Gradle
+- builds the project
+- builds a Docker image
+- pushes the image to the configured registry on `main` or `master`
+
+Required GitHub configuration:
+
+- repository secret `REGISTRY_USERNAME`
+- repository secret `REGISTRY_PASSWORD`
+- repository variable `REGISTRY` such as `ghcr.io`
+- repository variable `IMAGE_NAME` such as `your-user-or-org/aeza-logo-server`
+
 ## API
 
 Main endpoints:
