@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: aeza-backend
-          image: ghcr.io/ImOkey81/aeza-logo-server:latest
+          image: ghcr.io/imokey81/aeza-logo-server:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8087
